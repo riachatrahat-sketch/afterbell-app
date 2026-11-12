@@ -7,15 +7,8 @@
 পরীক্ষা: `https://afterbellacademy.com/wp-json/afterbell/v1/app/home` খুললে ডেটা দেখাবে।
 ৪০৪ এলে Settings → Permalinks → Save Changes।
 
-## ধাপ ২: GitHub-এ সব ফাইল তোলা
-1. github.com-এ লগইন → New repository → নাম দিন (যেমন `afterbell-app`) → Create।
-   Public করলে APK-এর ডাউনলোড লিংক যে কেউ খুলতে পারবে। Private করলে শুধু আপনি নামাতে পারবেন।
-2. এই জিপটি কম্পিউটারে খুলুন (Extract)।
-3. repository-তে "uploading an existing file" → জিপের ভেতরের **সব কিছু** টেনে ছেড়ে দিন:
-   `afterbell-backend`, `afterbell_app`, `.github` ফোল্ডার এবং README (একটি একটি করে ফোল্ডার তুললে ভালো) → Commit changes।
-4. `.github` ফোল্ডারটি লুকানো থাকতে পারে এবং আপলোডে বাদ পড়তে পারে। আপলোডের পর repository-তে
-   `.github/workflows/build-apk.yml` আছে কিনা দেখুন। না থাকলে: Add file → Create new file →
-   নামের ঘরে লিখুন `.github/workflows/build-apk.yml` → জিপের ওই ফাইলটি Notepad-এ খুলে পুরো লেখা পেস্ট করুন → Commit।
+## ধাপ ২: GitHub
+ফাইলগুলো এই repository-তে আগে থেকেই আছে: `afterbell-backend`, `afterbell_app`, `.github`।
 
 ## ধাপ ৩: Backend Vercel-এ চালু করা
 1. vercel.com → Continue with GitHub → Add New → Project → আপনার repository → Import।
@@ -25,7 +18,7 @@
 
 ## ধাপ ৪: GitHub দিয়ে APK বানানো
 1. repository → উপরের **Actions** ট্যাব (প্রথমবার "I understand my workflows, go ahead and enable them" চাপতে হতে পারে)।
-2. বাঁ পাশে **Build Android APK** → ডান পাশে **Run workflow**।
+2. বাঁ পাশে **Afterbell app** → ডান পাশে **Run workflow** → "What to do"-তে **2. Build the Android APK** বেছে নিন।
 3. ঘরে Vercel-এর ঠিকানা দিন, যেমন `https://afterbell-app.vercel.app` (শেষে `/api` বা `/` নয়) → Run workflow।
 4. ১০ থেকে ১৫ মিনিট অপেক্ষা করুন। সবুজ টিক এলে সফল।
    লাল ক্রস এলে সেই রানে ঢুকে লাল ধাপটি খুলুন, ত্রুটির লেখা কপি করে Claude-কে পাঠান।
