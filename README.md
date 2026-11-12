@@ -18,7 +18,7 @@
 
 ## ধাপ ৪: GitHub দিয়ে APK বানানো
 1. repository → উপরের **Actions** ট্যাব (প্রথমবার "I understand my workflows, go ahead and enable them" চাপতে হতে পারে)।
-2. বাঁ পাশে **Afterbell app** → ডান পাশে **Run workflow** → "What to do"-তে **2. Build the Android APK** বেছে নিন।
+2. বাঁ পাশে **Build Android APK** → ডান পাশে **Run workflow**।
 3. ঘরে Vercel-এর ঠিকানা দিন, যেমন `https://afterbell-app.vercel.app` (শেষে `/api` বা `/` নয়) → Run workflow।
 4. ১০ থেকে ১৫ মিনিট অপেক্ষা করুন। সবুজ টিক এলে সফল।
    লাল ক্রস এলে সেই রানে ঢুকে লাল ধাপটি খুলুন, ত্রুটির লেখা কপি করে Claude-কে পাঠান।
