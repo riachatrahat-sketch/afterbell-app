@@ -660,7 +660,7 @@ class _PollDialogState extends State<_PollDialog> {
               ),
             const SizedBox(height: 12),
             DropdownButtonFormField<int>(
-              value: right,
+              initialValue: right,
               decoration: const InputDecoration(labelText: 'Right answer'),
               items: const <DropdownMenuItem<int>>[
                 DropdownMenuItem<int>(value: 0, child: Text('No right answer (opinion)')),
