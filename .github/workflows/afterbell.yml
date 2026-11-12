@@ -1,0 +1,131 @@
+name: Afterbell app
+
+# Run it by hand: GitHub > Actions > "Afterbell app" > Run workflow.
+on:
+  workflow_dispatch:
+    inputs:
+      task:
+        description: "What to do"
+        required: true
+        type: choice
+        default: "1. Unpack project.zip into the repository"
+        options:
+          - "1. Unpack project.zip into the repository"
+          - "2. Build the Android APK"
+      api_base:
+        description: "Only for step 2: backend address from Vercel, without /api (example: https://afterbell-app.vercel.app)"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  unpack:
+    if: startsWith(inputs.task, '1')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Unpack project.zip and save the files
+        run: |
+          if [ ! -f project.zip ]; then echo "::error::project.zip was not found. Upload it to the repository first (Add file > Upload files)."; exit 1; fi
+          unzip -o project.zip -x ".github/*"
+          for d in afterbell-backend afterbell_app; do
+            [ -d "$d" ] || { echo "::error::The zip does not contain the $d folder."; exit 1; }
+          done
+          git rm -q --cached project.zip
+          rm project.zip
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Unpack project files"
+          git push
+          echo "Done. The repository now has afterbell-backend and afterbell_app."
+
+  apk:
+    if: startsWith(inputs.task, '2')
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: afterbell_app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Check the backend address
+        env:
+          API_BASE: ${{ inputs.api_base }}
+        run: |
+          case "$API_BASE" in
+            https://*) ;;
+            *) echo "::error::The backend address must start with https://"; exit 1 ;;
+          esac
+          case "$API_BASE" in
+            */api|*/api/|*/) echo "::error::Write the address without /api and without a slash at the end"; exit 1 ;;
+          esac
+          curl -fsS --max-time 30 "$API_BASE/api/health" || { echo "::error::$API_BASE/api/health did not answer. Deploy the backend on Vercel first."; exit 1; }
+
+      - name: Create the Android project files
+        run: |
+          mkdir -p /tmp/keep && cp -r lib test pubspec.yaml analysis_options.yaml /tmp/keep/
+          flutter create --platforms=android --org com.afterbellacademy --project-name afterbell_app .
+          cp -r /tmp/keep/lib /tmp/keep/test /tmp/keep/pubspec.yaml /tmp/keep/analysis_options.yaml .
+
+      - name: Add internet permission and app name
+        run: |
+          python3 - <<'PY'
+          import re
+          p = 'android/app/src/main/AndroidManifest.xml'
+          s = open(p, encoding='utf-8').read()
+          intents = '''
+                  <intent><action android:name="android.intent.action.VIEW"/><data android:scheme="https"/></intent>
+                  <intent><action android:name="android.intent.action.SENDTO"/><data android:scheme="mailto"/></intent>'''
+          if 'android.permission.INTERNET' not in s:
+              s = s.replace('<application', '<uses-permission android:name="android.permission.INTERNET"/>\n    <application', 1)
+          if 'android.intent.action.SENDTO' not in s:
+              if '<queries>' in s:
+                  s = s.replace('<queries>', '<queries>' + intents, 1)
+              else:
+                  s = s.replace('</manifest>', '    <queries>' + intents + '\n    </queries>\n</manifest>', 1)
+          s = re.sub(r'android:label="[^"]*"', 'android:label="Afterbell Academy"', s, count=1)
+          open(p, 'w', encoding='utf-8').write(s)
+          print(s)
+          PY
+
+      - run: flutter pub get
+
+      - name: Check the code
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: Build the APK
+        env:
+          API_BASE: ${{ inputs.api_base }}
+        run: flutter build apk --release --dart-define=API_BASE="$API_BASE"
+
+      - name: Name the file
+        run: cp build/app/outputs/flutter-apk/app-release.apk "$GITHUB_WORKSPACE/afterbell-academy.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: afterbell-academy-apk
+          path: afterbell-academy.apk
+
+      - name: Publish as a release (download link)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: Afterbell Academy app, build ${{ github.run_number }}
+          body: "Test build. Backend: ${{ inputs.api_base }}"
+          files: afterbell-academy.apk
