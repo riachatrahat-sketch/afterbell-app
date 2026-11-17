@@ -18,6 +18,9 @@ const wp = http.createServer((req, res) => {
     if (p === '/app/classes/99') return send(404, { code: 'ab_not_found', message: 'Class not found.' });
     if (p === '/app/login') return JSON.parse(body).password === 'right' ? send(200, { token: TOKEN, user: { id: 7 } }) : send(401, { code: 'ab_login', message: 'The email or password is not right.' });
     if (p === '/app/me') return req.headers['x-afterbell-token'] === TOKEN ? send(200, { id: 7 }) : send(401, { code: 'rest_forbidden', message: 'Sorry, you are not allowed to do that.' });
+    if (p === '/app/signup') return send(200, { pending: true, echo: JSON.parse(body) });
+    if (p === '/app/support') return send(200, { items: [], echo: body ? JSON.parse(body) : null });
+    if (p === '/app/notices') return send(200, { items: [], echo: body ? JSON.parse(body) : null });
     if (p === '/live') return send(200, { live: true, echo: JSON.parse(body) });
     if (p === '/app/home') { res.writeHead(200); return res.end('<html>broken</html>'); }
     return send(500, { code: 'internal', message: 'secret stack trace' });
@@ -66,6 +69,13 @@ wp.listen(0, async () => {
 
   r = await post('/api/live', { do: 'act', class: 7, type: 'poll', q: 'Hi', opts: ['a', 'b'], admin: true, nested: { x: 1 } }, TOKEN); j = await r.json();
   ok(r.status === 200 && j.echo.opts.length === 2 && j.echo.admin === undefined && j.echo.nested === undefined && j.echo.class === 7, 'live action forwards only known fields');
+
+  r = await post('/api/auth/signup', { name: 'T', email: 'a@b.c', password: 'pw123456', type: 'teacher', subject: 'Math', about: 'Hi', role: 'administrator' }); j = await r.json();
+  ok(r.status === 200 && j.pending === true && j.echo.type === 'teacher' && j.echo.subject === 'Math' && j.echo.role === undefined, 'signup forwards type/subject/about only');
+  r = await api('/api/support'); ok(r.status === 401, 'support needs sign-in');
+  r = await post('/api/support', { text: 'Help', admin: 1 }, TOKEN); j = await r.json(); ok(r.status === 200 && j.echo.text === 'Help' && j.echo.admin === undefined, 'support message forwards text only');
+  r = await post('/api/notices', { title: 'T', text: 'x', audience: 'all', evil: 1 }, TOKEN); j = await r.json(); ok(r.status === 200 && j.echo.audience === 'all' && j.echo.evil === undefined, 'notice forwards known fields only');
+  r = await api('/api/notices', { headers: { Authorization: 'Bearer ' + TOKEN } }); ok(r.status === 200, 'notices list');
 
   r = await api('/api/home'); ok(r.status === 502, 'non-JSON answer from WordPress becomes 502');
   r = await api('/api/teacher?id=5'); j = await r.json(); ok(r.status === 502 && !JSON.stringify(j).includes('secret'), 'server error becomes 502 without leaking its message');

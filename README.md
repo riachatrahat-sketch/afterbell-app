@@ -3,7 +3,7 @@
     Flutter অ্যাপ (Android)  →  Next.js backend (Vercel)  →  WordPress সাইট (ডেটা)
 
 ## ধাপ ১: WordPress থিম
-`afterbell-academy.zip` (v6.1.0) আপলোড করে Replace current দিন।
+`afterbell-THEME-v6.5.0.zip` আপলোড করে Replace current দিন (Appearance → Themes → Add New → Upload)।
 পরীক্ষা: `https://afterbellacademy.com/wp-json/afterbell/v1/app/home` খুললে ডেটা দেখাবে।
 ৪০৪ এলে Settings → Permalinks → Save Changes।
 
@@ -35,3 +35,12 @@
 ## ঐচ্ছিক: অ্যাপ কী (বাড়তি সুরক্ষা)
 WordPress অ্যাডমিন → Afterbell → Live classroom → "Mobile app key"-তে একটি লম্বা এলোমেলো মান দিন,
 আর Vercel-এ একই মান `WP_APP_KEY` নামে দিয়ে Redeploy করুন।
+
+
+## নতুন (v6.5.0): অনুমোদন, নোটিশ ও সাপোর্ট চ্যাট
+- **Approval:** অ্যাপে নতুন Student/Parent বা Teacher অ্যাকাউন্ট "Pending" থাকে। WordPress অ্যাডমিন → **App members → Approvals**-এ Approve বা Reject করুন। ইমেইল চলে যায়। Teacher approve করলে তার ইমেইল দিয়ে একটি teacher প্রোফাইল তৈরি হয়, এতে সে ক্লাস চালাতে (host) পারে।
+- **আগের অ্যাকাউন্ট:** আগে থেকে থাকা বা ওয়েবসাইটে খোলা অ্যাকাউন্ট approved ধরা হয়, তাই কেউ লক হবে না।
+- **Notices:** **App members → App notices → Add notice** থেকে লিখুন (সবাই / শুধু student / শুধু teacher)। Approved teacher অ্যাপ থেকেও নিজের student-দের notice দিতে পারে।
+- **Support chat:** অ্যাপে Account → Help & support। উত্তর দিন **App members → Support chats**-এ। নতুন মেসেজ এলে অ্যাডমিন ইমেইলে খবর যায়।
+- **Backend:** নতুন রুট `/api/notices` ও `/api/support`। Vercel-এ নতুন করে Deploy হবে (GitHub-এ ফাইল তুললেই হয়)। নতুন Environment Variable লাগবে না।
+- অ্যাডমিন ইমেইল (Settings → General) ঠিক আছে কি না দেখে নিন, কারণ approval ও chat-এর খবর সেখানে যায়।

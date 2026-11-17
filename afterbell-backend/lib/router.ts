@@ -34,7 +34,7 @@ export const ROUTES: Route[] = [
   { method: 'GET', path: '/teacher', wp: '/app/teachers/:id', cache: 120 },
 
   { method: 'POST', path: '/auth/login', wp: '/app/login', fields: ['email', 'password'], key: true, limited: true },
-  { method: 'POST', path: '/auth/signup', wp: '/app/signup', fields: ['name', 'email', 'password'], key: true, limited: true },
+  { method: 'POST', path: '/auth/signup', wp: '/app/signup', fields: ['name', 'email', 'password', 'type', 'subject', 'about'], key: true, limited: true },
   { method: 'POST', path: '/auth/logout', wp: '/app/logout', auth: true },
 
   { method: 'GET', path: '/me', wp: '/app/me', auth: true },
@@ -48,6 +48,10 @@ export const ROUTES: Route[] = [
     method: 'POST', path: '/live', wp: '/live', auth: true,
     fields: ['do', 'class', 'name', 'since', 'mood', 'type', 'val', 'ref', 'q', 'opts', 'right', 'tuid', 'tname', 'vote', 'reaction', 'comment'],
   },
+  { method: 'GET', path: '/notices', wp: '/app/notices', auth: true },
+  { method: 'POST', path: '/notices', wp: '/app/notices', auth: true, fields: ['title', 'text', 'audience'] },
+  { method: 'GET', path: '/support', wp: '/app/support', auth: true },
+  { method: 'POST', path: '/support', wp: '/app/support', auth: true, fields: ['text'] },
   { method: 'GET', path: '/teaching', wp: '/app/teaching', auth: true, fields: ['days'] },
 ];
 

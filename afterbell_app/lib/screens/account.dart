@@ -4,6 +4,8 @@ import '../api.dart';
 import '../state.dart';
 import '../theme.dart';
 import '../widgets.dart';
+import 'notices.dart';
+import 'support.dart';
 import 'teaching.dart';
 
 class AccountScreen extends StatelessWidget {
@@ -28,14 +30,20 @@ class _AuthFormState extends State<AuthForm> {
   final TextEditingController name = TextEditingController();
   final TextEditingController email = TextEditingController();
   final TextEditingController password = TextEditingController();
+  final TextEditingController subject = TextEditingController();
+  final TextEditingController about = TextEditingController();
   bool joining = false, busy = false, hide = true;
+  String type = 'student';
   String? error;
+  String? notice;
 
   @override
   void dispose() {
     name.dispose();
     email.dispose();
     password.dispose();
+    subject.dispose();
+    about.dispose();
     super.dispose();
   }
 
@@ -48,7 +56,14 @@ class _AuthFormState extends State<AuthForm> {
     final AppState app = AppScope.read(context);
     try {
       if (joining) {
-        await app.signup(name.text, email.text, password.text);
+        final String? wait = await app.signup(name.text, email.text, password.text, type: type, subject: subject.text, about: about.text);
+        if (wait != null && mounted) {
+          setState(() {
+            notice = wait;
+            joining = false;
+            password.clear();
+          });
+        }
       } else {
         await app.login(email.text, password.text);
       }
@@ -63,10 +78,37 @@ class _AuthFormState extends State<AuthForm> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 28, 20, 32),
       children: <Widget>[
+        if (notice != null) ...<Widget>[
+          Panel(
+            color: const Color(0xFFE8F8F1),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                const Icon(Icons.hourglass_top, color: AB.teal),
+                const SizedBox(height: 8),
+                const Text('Waiting for approval', style: h2),
+                const SizedBox(height: 6),
+                Text(notice!, style: mutedText),
+              ],
+            ),
+          ),
+          const SizedBox(height: 18),
+        ],
         Text(joining ? 'Join Afterbell for free' : 'Welcome back', style: h1),
         const SizedBox(height: 6),
-        Text(joining ? 'Accounts are for parents and guardians. You add your learners after joining.' : 'Log in with the email and password of your Afterbell account.', style: mutedText),
+        Text(joining ? 'New accounts are approved by our team, usually within a day. We will email you.' : 'Log in with the email and password of your Afterbell account.', style: mutedText),
         const SizedBox(height: 20),
+        if (joining) ...<Widget>[
+          SegmentedButton<String>(
+            segments: const <ButtonSegment<String>>[
+              ButtonSegment<String>(value: 'student', label: Text('Student / Parent'), icon: Icon(Icons.family_restroom)),
+              ButtonSegment<String>(value: 'teacher', label: Text('Teacher'), icon: Icon(Icons.school_outlined)),
+            ],
+            selected: <String>{type},
+            onSelectionChanged: (Set<String> v) => setState(() => type = v.first),
+          ),
+          const SizedBox(height: 16),
+        ],
         Form(
           key: form,
           child: AutofillGroup(
@@ -91,6 +133,23 @@ class _AuthFormState extends State<AuthForm> {
                   validator: (String? v) => RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch((v ?? '').trim()) ? null : 'Enter a valid email',
                 ),
                 const SizedBox(height: 12),
+                if (joining && type == 'teacher') ...<Widget>[
+                  TextFormField(
+                    controller: subject,
+                    textCapitalization: TextCapitalization.sentences,
+                    decoration: const InputDecoration(labelText: 'What do you teach?', hintText: 'e.g. Math, Public speaking'),
+                    validator: (String? v) => (v ?? '').trim().isEmpty ? 'Tell us what you teach' : null,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: about,
+                    maxLines: 3,
+                    maxLength: 600,
+                    textCapitalization: TextCapitalization.sentences,
+                    decoration: const InputDecoration(labelText: 'About you', hintText: 'Experience, ages you teach'),
+                  ),
+                  const SizedBox(height: 4),
+                ],
                 TextFormField(
                   controller: password,
                   obscureText: hide,
@@ -109,12 +168,13 @@ class _AuthFormState extends State<AuthForm> {
         ),
         if (error != null) ...<Widget>[const SizedBox(height: 12), Text(error!, style: const TextStyle(color: AB.red, fontWeight: FontWeight.w600))],
         const SizedBox(height: 18),
-        FilledButton(onPressed: busy ? null : submit, child: busy ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5)) : Text(joining ? 'Create account' : 'Log in')),
+        FilledButton(onPressed: busy ? null : submit, child: busy ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5)) : Text(joining ? (type == 'teacher' ? 'Send teacher request' : 'Create account') : 'Log in')),
         const SizedBox(height: 8),
         TextButton(
           onPressed: busy ? null : () => setState(() {
                 joining = !joining;
                 error = null;
+                notice = null;
               }),
           child: Text(joining ? 'I already have an account' : 'New here? Join for free'),
         ),
@@ -187,6 +247,8 @@ class _Account extends StatelessWidget {
         children: <Widget>[
           Text('Hi, ${str(u['name'], 'there')}', style: h1),
           Text(str(u['email']), style: mutedText),
+          const SizedBox(height: 8),
+          Align(alignment: Alignment.centerLeft, child: Pill(app.isTeacherAccount ? 'Teacher' : 'Student / Parent', color: const Color(0xFFFFE6A8))),
           const SizedBox(height: 20),
           Row(
             children: <Widget>[
@@ -230,6 +292,28 @@ class _Account extends StatelessWidget {
                   title: const Text('Favorites'),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const FavoritesScreen())),
+                ),
+                const Divider(height: 1, color: AB.line),
+                ListTile(
+                  leading: Badge(isLabelVisible: app.unreadNotices > 0, label: Text('${app.unreadNotices}'), child: const Icon(Icons.campaign_outlined)),
+                  title: const Text('Notices'),
+                  subtitle: const Text('Updates from Afterbell and your teachers'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () async {
+                    await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const NoticesScreen()));
+                    app.refreshMe();
+                  },
+                ),
+                const Divider(height: 1, color: AB.line),
+                ListTile(
+                  leading: Badge(isLabelVisible: app.unreadSupport > 0, label: Text('${app.unreadSupport}'), child: const Icon(Icons.support_agent_outlined)),
+                  title: const Text('Help & support'),
+                  subtitle: const Text('Chat with the Afterbell team'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () async {
+                    await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const SupportScreen()));
+                    app.refreshMe();
+                  },
                 ),
                 if (app.isTeacher) ...<Widget>[
                   const Divider(height: 1, color: AB.line),

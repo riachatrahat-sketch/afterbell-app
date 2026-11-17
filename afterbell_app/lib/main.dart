@@ -75,11 +75,11 @@ class Shell extends StatelessWidget {
       bottomNavigationBar: NavigationBar(
         selectedIndex: app.tab,
         onDestinationSelected: app.goTab,
-        destinations: const <NavigationDestination>[
-          NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
-          NavigationDestination(icon: Icon(Icons.search), label: 'Explore'),
-          NavigationDestination(icon: Icon(Icons.videocam_outlined), selectedIcon: Icon(Icons.videocam), label: 'Classroom'),
-          NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Account'),
+        destinations: <NavigationDestination>[
+          const NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
+          const NavigationDestination(icon: Icon(Icons.search), label: 'Explore'),
+          const NavigationDestination(icon: Icon(Icons.videocam_outlined), selectedIcon: Icon(Icons.videocam), label: 'Classroom'),
+          NavigationDestination(icon: Badge(isLabelVisible: app.unreadNotices + app.unreadSupport > 0, child: const Icon(Icons.person_outline)), selectedIcon: const Icon(Icons.person), label: 'Account'),
         ],
       ),
     );

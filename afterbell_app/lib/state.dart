@@ -18,6 +18,9 @@ class AppState extends ChangeNotifier {
 
   bool get signedIn => user != null;
   bool get isTeacher => yes(user?['is_teacher']);
+  bool get isTeacherAccount => str(user?['type']) == 'teacher';
+  int get unreadNotices => num0(user?['unread_notices']);
+  int get unreadSupport => num0(user?['unread_support']);
   List<int> get favorites => (user?['favorites'] is List) ? (user!['favorites'] as List<dynamic>).map(num0).toList() : <int>[];
   bool isFav(int id) => favorites.contains(id);
 
@@ -55,8 +58,19 @@ class AppState extends ChangeNotifier {
     await _remember(await api.post('/auth/login', <String, dynamic>{'email': email.trim(), 'password': password}));
   }
 
-  Future<void> signup(String name, String email, String password) async {
-    await _remember(await api.post('/auth/signup', <String, dynamic>{'name': name.trim(), 'email': email.trim(), 'password': password}));
+  /// Returns a message when the account must wait for admin approval (no sign-in yet), or null when signed in.
+  Future<String?> signup(String name, String email, String password, {String type = 'student', String subject = '', String about = ''}) async {
+    final Map<String, dynamic> res = await api.post('/auth/signup', <String, dynamic>{
+      'name': name.trim(),
+      'email': email.trim(),
+      'password': password,
+      'type': type,
+      if (subject.trim().isNotEmpty) 'subject': subject.trim(),
+      if (about.trim().isNotEmpty) 'about': about.trim(),
+    });
+    if (yes(res['pending'])) return str(res['message'], 'Your request was sent. We will email you once it is approved.');
+    await _remember(res);
+    return null;
   }
 
   Future<void> logout() async {
